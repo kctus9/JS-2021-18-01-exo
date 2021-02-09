@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>Commits-example</title>
+	<style>
+		#demo {
+			font-family: 'Helvetica', Arial, sans-serif;
+		}
+		a {
+			text-decoration: none;
+			color: #f66;
+		}
+		.status{
+			width:25%;
+			border:solid;
+			border-width:2px;
+			margin: 2px;
+		}
+		.status0{
+			background-color:rgb(199, 199, 199);
+			border-color: rgb(161, 161, 161)
+		}
+		.status1{
+			background-color:rgb(255, 176, 176);
+			border-color:rgb(255, 142, 142);
+		}
+		.status2{
+			background-color:rgb(235, 200, 137);
+			border-color:rgb(235, 187, 97);
+		}
+		.status5{
+			background-color:rgb(176, 221, 176);
+			border-color:rgb(141, 223, 141);
+		}
+	</style>
+</head>
+<body>
+	<div id="demo">
+		<!-- <pre>{{commits}}</pre> -->
+		<h1>Parkings Nantais</h1>
+
+
+
+		<template v-for="parking in parkings">
+			<div v-if=" parking.fields.grp_statut == '0'" class="status status0">
+				<ul><label :class="" :for="parking">{{ parking.fields.grp_nom }} : {{ parking.fields.grp_disponible }} / {{ parking.fields.grp_exploitation }} (Aucune Information)</label></ul>
+				<a :href="'https://www.google.com/maps/dir/?api=1&destination=' + parking.fields.location[0] + ',' + parking.fields.location[1]">Voir sur la carte</a>
+			</div>
+			<div v-else-if=" parking.fields.grp_statut == '1'" class="status status1">
+				<ul><label :class="" :for="parking">{{ parking.fields.grp_nom }} : {{ parking.fields.grp_disponible }} / {{ parking.fields.grp_exploitation }}</label></ul>
+				<a :href="'https://www.google.com/maps/dir/?api=1&destination=' + parking.fields.location[0] + ',' + parking.fields.location[1]">Voir sur la carte</a>
+			</div>
+			<div v-else-if=" parking.fields.grp_statut == '2'" class="status status2">
+				<ul><label :class="" :for="parking">{{ parking.fields.grp_nom }} : {{ parking.fields.grp_disponible }} / {{ parking.fields.grp_exploitation }} (Réservé abonnés)</label></ul>
+				<a :href="'https://www.google.com/maps/dir/?api=1&destination=' + parking.fields.location[0] + ',' + parking.fields.location[1]">Voir sur la carte</a>
+			</div>
+			<div v-else-if="parking.fields.grp_statut =='5'" class="status status5">
+				<ul><label :class="" :for="parking">{{ parking.fields.grp_nom }} : {{ parking.fields.grp_disponible }} / {{ parking.fields.grp_exploitation }} </label></ul>
+				
+			</div>
+		</template>
+
+	</div>
+	<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+	<script>
+		const apiURL = 'https://data.nantesmetropole.fr/api/records/1.0/search/?dataset=244400404_parkings-publics-nantes-disponibilites&q=&rows=30&facet=grp_nom&facet=grp_statut'
+
+		const demo = new Vue({
+			el: '#demo',
+			data: {
+				branches: ['master', 'dev'],
+				currentBranch: 'master',
+				data: [],
+				parkings: []
+				
+			},
+			created: function () {
+				this.fetchData();
+				this.tri();
+			},
+			computed:{
+				
+			},
+			watch: {
+				
+			},
+			filters: {
+				truncate: function (v) {
+					const newline = v.indexOf('\n')
+					return newline > 0 ? v.slice(0, newline) : v
+				},
+				formatDate: function (v) {
+					return v.replace(/T|Z/g, ' ')
+				}
+			},
+			methods: {
+			  	// Version promesse et fonction fléchée
+			    // fetchData1: function () {
+				//   	axios.get(apiURL)
+				// 	  .then((response) => {
+				// 	  	console.log(response.data)
+				// 	    this.parkings = response.data 
+				// 	  })
+				// 	  .catch((error) => {
+				// 	    console.log(error);
+				// 	  })
+				// },
+				// // Version promesse et function standard/historique
+				// fetchData2: function () {
+				// 	const self = this
+				// 	axios.get(apiURL + this.currentBranch)
+				// 		.then(function (response) {
+				// 			console.log(response.data)
+				// 			self.commits = response.data 
+				// 		})
+				// 		.catch(function (error) {
+				// 			console.log(error);
+				// 		})
+				// },
+				// Version async/await (à mon sens, à privilégier)
+				log: function(){
+					for(let p in this.parkings){
+						console.log(p.fields)
+						if(p.fields.grp_statut == 5 ){
+							console.log(p.fields)
+						}
+					}
+				},
+				compare: function (a, b) {
+    				return ('' + a[0]).localeCompare(b[0]);
+				},
+				tri: function(){
+					for(let i= 0 ; i < this.parkings.length; i++){
+						
+
+						for(let j= 0 ; j < this.parkings.length; j++){
+							if(this.parkings[i].fields.grp_nom.localeCompare(this.parkings[j].fields.grp_nom) == -1){
+								temp: [];
+								temp = this.parkings[i];
+								this.parkings[i] = this.parkings[j];
+								this.parkings[j]=temp;
+								temp=null;
+							}
+						}
+					}
+					this.log();
+				},
+				fetchData: async function () {
+					try {
+					  	const response = await axios.get(apiURL)
+						console.log(response.data)
+						this.data = response.data 
+						this.parkings = this.data.records
+						this.tri()
+					} catch (error) {
+						console.log(error);
+					}
+				}
+		  	}
+		})
+	</script>
+</body>
+</html>
